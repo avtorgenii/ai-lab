@@ -1,6 +1,6 @@
 import csv
 import logging
-import time
+# from dijkstra import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,9 +21,11 @@ def load_data():
     # Load file into list of dicts
     with open('connection_graph.csv', mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
-        data = [{**row,
+        data = [{'line': row['line'],
                  'departure_time': str_to_seconds(row['departure_time']),
                  'arrival_time': str_to_seconds(row['arrival_time']),
+                 'start_stop': row['start_stop'],
+                 'end_stop': row['end_stop'],
                  'start_stop_lat': float(row['start_stop_lat']),
                  'start_stop_lon': float(row['start_stop_lat']),
                  'end_stop_lat': float(row['start_stop_lat']),
@@ -32,48 +34,10 @@ def load_data():
         return data
 
 
-"""
-        route_info = [{
-        line: ,
-        departure_time:
-        start_stop:
-        arrival_time:
-        end_stop
-        }, {...}, {...}
-        ]
-"""
-
-
-def found_route_details(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-
-        route_info, cost_func_value = func(*args, **kwargs)
-
-        end_time = time.time()
-
-        logging.info("ROUTE INFO")
-        for route in route_info:
-            part_of_the_way = ''
-            for k, v in route.items():
-                part_of_the_way += f"{k}: {v}"
-            logging.info(part_of_the_way)
-
-        logging.error("COST FUNC VALUE: " + cost_func_value)
-        logging.error("CALCULATION TIME: " + str(end_time - start_time))
-
-    return wrapper
-
-
-@found_route_details
-def dijkstra_time(graph, start_stop, end_stop, start_time):
-    pass
-
-
 if __name__ == '__main__':
-    graph = load_data()
+    data = load_data()
 
-    print(graph)
+    print(data)
 
     start_stop = "PL. JANA PAWŁA II"
     end_stop = "PL. GRUNWALDZKI"
@@ -81,4 +45,7 @@ if __name__ == '__main__':
     start_time = str_to_seconds("10:45:00")
 
     # 1a
-    # dijkstra_time(graph, start_stop, end_stop, start_time)
+    # graph = data_to_graph(data)
+    # if criteria == "t":
+    #     dijkstra_time(graph, start_stop, end_stop, start_time)
+
