@@ -1,7 +1,7 @@
 import logging
 import time
 
-
+logging.basicConfig(level=logging.DEBUG)
 """
         route_info = [{
         line: ,
@@ -25,10 +25,11 @@ def found_route_details(func):
         for route in route_info:
             part_of_the_way = ''
             for k, v in route.items():
-                part_of_the_way += f"{k}: {v}"
+                part_of_the_way += f"{k}: {v} "
             logging.info(part_of_the_way)
 
-        logging.error("COST FUNC VALUE: " + cost_func_value)
-        logging.error("CALCULATION TIME: " + str(end_time - start_time))
+        logging.error(f"COST FUNC VALUE: {cost_func_value}")
+        calc_time = end_time - start_time
+        logging.error(f"CALCULATION TIME: {calc_time:.2f} seconds")
 
     return wrapper

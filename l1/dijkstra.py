@@ -1,7 +1,7 @@
+import heapq
 from collections import defaultdict
 from decorators import *
-from graph import data_to_graph
-from main import load_data, str_to_seconds
+from graph import *
 
 """
         route_info = [{
@@ -16,56 +16,88 @@ from main import load_data, str_to_seconds
 """
 
 
-# @found_route_details
-def dijkstra_time(adj_list, start_stop, end_stop, start_time, transfer_time):
+class PriorityQueue:
+    def __init__(self):
+        self.elements = []
+
+    def empty(self) -> bool:
+        return not self.elements
+
+    def put(self, item, priority):
+        heapq.heappush(self.elements, (priority, item))
+
+    def get(self):
+        return heapq.heappop(self.elements)[1]
+
+
+@found_route_details
+def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
     print("DIJKSTRA TIME CRITERIA")
-    # A -> [(B, "105", departure_time, arrival_time), (B, "105", departure_time, 1), (C, "105", departure_time 5)]
 
-    unvisited = list(adj_list.keys())  # List of all nodes
-    times = {stop: float('inf') for stop in unvisited}  # Initialize distances
-    times[start_stop] = 0  # Time to the start node is 0
-    # Where from, when arrived, by which line
-    previous_stops = {stop: (None, None, None) for stop in unvisited}
+    unvisited = PriorityQueue()
+    unvisited.put(start_stop, 0)
 
-    # Until all stops are explored
-    while unvisited:
-        # Select the unvisited stop with the smallest time to it
-        current_stop = min(unvisited, key=lambda stop: times[stop])
-        unvisited.remove(current_stop)
+    time_to_stop = defaultdict(lambda: float('inf')) # default time to each stop is inf
+    time_to_stop[start_stop] = 0
+    best_way_to_stop = {} # key - end stop, value - (start stop, Edge)
+    cur_time_on_stop = {start_stop: start_time}
 
-        for next_stop, line, departure_time, arrival_time in adj_list[current_stop]:
-            time_to_stop = times[current_stop] + arrival_time - departure_time
-            if time_to_stop < times.get(next_stop, float('inf')) and :  # Found a shorter path
-                times[next_stop] = time_to_stop
-                previous_stops[next_stop] = (current_stop, arrival_time, line)
+    while not unvisited.empty():
+        cur_stop = unvisited.get()
+        if cur_stop == end_stop:
+            break
+        try:
+            graph.nodes[cur_stop]
+        except KeyError:
+            logging.error(f"Unknown stop: {cur_stop}")
+            continue
+
+        for neighbor in graph.nodes[cur_stop]:
+            best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor)
+            new_time_to_stop = time_to_stop[cur_stop] + best_time
+
+            if time_to_stop[neighbor] > new_time_to_stop:
+                time_to_stop[neighbor] = new_time_to_stop
+                unvisited.put(neighbor, new_time_to_stop)
+                best_way_to_stop[neighbor] = (cur_stop, best_way)
+                cur_time_on_stop[neighbor] = cur_time_on_stop[cur_stop] + best_time
 
     # Reconstruct path
     path = []
-    current_stop = previous_stops.fil
-    line = None
-    while current_stop != start_stop:
-        print(current_stop)
-        next_stop, arrival_time, line = previous_stops[current_stop]
-        path.append((current_stop, line))
-        current_stop = next_stop
-    # Add start stop itself
-    path.append((current_stop, line))
+    cur_stop = end_stop
 
+    while cur_stop != start_stop:
+        prev_stop, best_way = best_way_to_stop[cur_stop]
+        path.append((prev_stop, cur_stop, best_way))
+        cur_stop = prev_stop
 
     path = path[::-1]
-    # print(previous_stops)
-    print(path)
 
-    return times[end_stop], path
+
+    route_info = []
+    for part in path:
+        start_stop, end_stop, way = part
+        route_info.append({
+            "Line": way.line,
+            "Departure time": way.depart_time,
+            "Arrival time": way.arrive_time,
+            "Start stop": start_stop,
+            "End stop": end_stop,
+        })
+
+
+    return route_info, time_to_stop[end_stop]
+
+
+
 
 
 if __name__ == '__main__':
-    start_stop = "PL. JANA PAWŁA II"
-    end_stop = "Rynek"
-    criteria = "t"
-    start_time = str_to_seconds("23:03:00")
+    start_stop = "PL. JANA PAWŁA II".lower()
+    end_stop = "GALERIA DOMINIKAŃSKA".lower()
+    start_time = str_to_seconds("10:03:00")
+    print(f"Start time: {start_time}")
     transfer_time = str_to_seconds("00:00:02")
 
-    data = load_data()
-    adj_list = data_to_graph(data, start_time)
-    dijkstra_time(adj_list, start_stop, end_stop, start_time, transfer_time)  # should print 2 minutes or 120 seconds
+    graph = Graph("connection_graph.csv")
+    dijkstra(graph, start_stop, end_stop, start_time, transfer_time)
