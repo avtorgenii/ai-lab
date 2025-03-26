@@ -1,5 +1,4 @@
-import heapq
-from decorators import *
+from utilities import *
 from graph import *
 
 """
@@ -15,18 +14,7 @@ from graph import *
 """
 
 
-class PriorityQueue:
-    def __init__(self):
-        self.elements = []
 
-    def empty(self) -> bool:
-        return not self.elements
-
-    def put(self, item, priority):
-        heapq.heappush(self.elements, (priority, item))
-
-    def get(self):
-        return heapq.heappop(self.elements)[1]
 
 
 @found_route_details
@@ -93,8 +81,8 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
 
 
 if __name__ == '__main__':
-    start_stop = "PL. JANA PAWŁA II".lower()
-    end_stop = "GALERIA DOMINIKAŃSKA".lower()
+    start_stop = "PILCZYCE".lower()
+    end_stop = "KLECINA".lower()
     start_time = str_to_seconds("10:03:00")
     print(f"Start time: {start_time}")
     transfer_time = str_to_seconds("00:02:00")

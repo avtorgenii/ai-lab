@@ -1,5 +1,7 @@
 import csv
+import geopy.distance
 from collections import defaultdict
+
 
 def str_to_seconds(time_string):
     hours, minutes, seconds = time_string.split(':')
@@ -36,7 +38,6 @@ class Edge:
             )
         return False
 
-
     def __repr__(self):
         return f"(Line: {self.line}, Depart time: {self.depart_time}, Arrive time: {self.arrive_time})"
 
@@ -44,7 +45,8 @@ class Edge:
 class Graph:
     def __init__(self, file_path):
         self.nodes = defaultdict(set)  # key - start stop, value - list of possible end stops
-        self.edges = defaultdict(list)  # key - pair of start and end stops, value - list of Edges (possible ways to travel from start stop to end stop)
+        self.edges = defaultdict(
+            list)  # key - pair of start and end stops, value - list of Edges (possible ways to travel from start stop to end stop)
         self.load_data(file_path)
 
     def load_data(self, file_path):
@@ -68,7 +70,6 @@ class Graph:
             for row in self.edges.values():
                 row.sort(key=lambda x: x.depart_time)
 
-
     def min_time_route(self, time, start_stop, end_stop, transfer_time, cur_line):
         possible_ways = self.edges[(start_stop, end_stop)]
 
@@ -91,10 +92,21 @@ class Graph:
 
         return best_time, best_way
 
-
-
     def min_transfer_route(self, time, start_stop, end_stop):
         pass
+
+    def heuristic(self, start_stop, end_stop):
+        # Get coordinates of both stops, usually not adjacent
+        some_stop = list(self.nodes[start_stop])[0]
+        edge = self.edges[(start_stop, some_stop)][0]
+        start_lat, start_lon = edge.start_lat, edge.start_lon
+
+        some_stop = list(self.nodes[end_stop])[0]
+        edge = self.edges[(some_stop, end_stop)][0]
+        end_lat, end_lon = edge.end_lat, edge.end_lon
+
+        # average speed of communication is 15 km/h, so transform heuristic into estimate of seconds to end stop
+        return geopy.distance.distance((start_lat, start_lon), (end_lat, end_lon)).km * 15 / 60
 
 
 if __name__ == '__main__':

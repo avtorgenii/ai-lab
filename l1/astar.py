@@ -1,5 +1,4 @@
-import heapq
-from decorators import *
+from utilities import *
 from graph import *
 
 """
@@ -15,20 +14,6 @@ from graph import *
 """
 
 
-class PriorityQueue:
-    def __init__(self):
-        self.elements = []
-
-    def empty(self) -> bool:
-        return not self.elements
-
-    def put(self, item, priority):
-        heapq.heappush(self.elements, (priority, item))
-
-    def get(self):
-        return heapq.heappop(self.elements)[1]
-
-
 @found_route_details
 def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
     print("A* TIME CRITERIA")
@@ -36,10 +21,10 @@ def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
     unvisited = PriorityQueue()
     unvisited.put(start_stop, 0)
 
-    time_to_stop = defaultdict(lambda: float('inf'))  # default time to each stop is inf
-    time_to_stop[start_stop] = 0
+    cost_to_stop = defaultdict(lambda: float('inf'))  # default cost to each stop is inf
+    cost_to_stop[start_stop] = 0
     best_way_to_stop = {}  # key - end stop, value - (start stop, Edge)
-    cur_time_on_stop = {start_stop: start_time}
+    cur_time_on_stop = {start_stop: start_time}  # current best time arriving at this stop
 
     while not unvisited.empty():
         cur_stop = unvisited.get()
@@ -59,11 +44,11 @@ def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
 
             best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time,
                                                        cur_line)
-            new_time_to_stop = time_to_stop[cur_stop] + best_time
+            new_cost_to_stop = cost_to_stop[cur_stop] + best_time + graph.heuristic(neighbor, end_stop)
 
-            if time_to_stop[neighbor] > new_time_to_stop:
-                time_to_stop[neighbor] = new_time_to_stop
-                unvisited.put(neighbor, new_time_to_stop)
+            if cost_to_stop[neighbor] > new_cost_to_stop:
+                cost_to_stop[neighbor] = new_cost_to_stop
+                unvisited.put(neighbor, new_cost_to_stop)
                 best_way_to_stop[neighbor] = (cur_stop, best_way)
                 cur_time_on_stop[neighbor] = cur_time_on_stop[cur_stop] + best_time
 
@@ -89,15 +74,26 @@ def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
             "End stop": end_stop,
         })
 
-    return route_info, time_to_stop[end_stop]
+    return route_info, cost_to_stop[end_stop]
 
 
 if __name__ == '__main__':
-    start_stop = "PL. JANA PAWŁA II".lower()
-    end_stop = "GALERIA DOMINIKAŃSKA".lower()
+    start_stop = "PILCZYCE".lower()
+    end_stop = "KLECINA".lower()
     start_time = str_to_seconds("10:03:00")
     print(f"Start time: {start_time}")
     transfer_time = str_to_seconds("00:02:00")
 
     graph = Graph("connection_graph.csv")
-    dijkstra(graph, start_stop, end_stop, start_time, transfer_time)
+    astar_time(graph, start_stop, end_stop, start_time, transfer_time)
+
+
+# INFO:root:ROUTE INFO:
+# INFO:root:Line: 20, Departure time: 10:05:00, Start stop: pilczyce, Arrival time: 10:37:00, End stop: hallera
+# INFO:root:Line: 17, Departure time: 10:40:00, Start stop: hallera, Arrival time: 10:41:00, End stop: jastrzębia
+# INFO:root:Line: 2, Departure time: 10:45:00, Start stop: jastrzębia, Arrival time: 10:46:00, End stop: orla
+# INFO:root:Line: 7, Departure time: 10:50:00, Start stop: orla, Arrival time: 10:53:00, End stop: krzyki
+# INFO:root:Line: D, Departure time: 10:57:00, Start stop: krzyki, Arrival time: 11:17:00, End stop: klecina
+# INFO:root:Line: 107, Departure time: 11:03:00, Start stop: zimowa, Arrival time: 11:04:00, End stop: os. przyjaźni
+# ERROR:root:COST FUNC VALUE: 4440
+# ERROR:root:CALCULATION TIME: 0.33 seconds
