@@ -30,8 +30,8 @@ class PriorityQueue:
 
 
 @found_route_details
-def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
-    print("DIJKSTRA TIME CRITERIA")
+def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
+    print("A* TIME CRITERIA")
 
     unvisited = PriorityQueue()
     unvisited.put(start_stop, 0)
