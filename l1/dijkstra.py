@@ -53,7 +53,12 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
             continue
 
         for neighbor in graph.nodes[cur_stop]:
-            best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor)
+            try:
+                cur_line = best_way_to_stop[cur_stop][1].line
+            except KeyError:
+                cur_line = None
+
+            best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time, cur_line)
             new_time_to_stop = time_to_stop[cur_stop] + best_time
 
             if time_to_stop[neighbor] > new_time_to_stop:
@@ -79,8 +84,8 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
         start_stop, end_stop, way = part
         route_info.append({
             "Line": way.line,
-            "Departure time": way.depart_time,
-            "Arrival time": way.arrive_time,
+            "Departure time": seconds_to_str(way.depart_time),
+            "Arrival time": seconds_to_str(way.arrive_time),
             "Start stop": start_stop,
             "End stop": end_stop,
         })
@@ -97,7 +102,7 @@ if __name__ == '__main__':
     end_stop = "GALERIA DOMINIKAŃSKA".lower()
     start_time = str_to_seconds("10:03:00")
     print(f"Start time: {start_time}")
-    transfer_time = str_to_seconds("00:00:02")
+    transfer_time = str_to_seconds("00:02:00")
 
     graph = Graph("connection_graph.csv")
     dijkstra(graph, start_stop, end_stop, start_time, transfer_time)

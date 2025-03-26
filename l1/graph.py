@@ -69,7 +69,7 @@ class Graph:
                 row.sort(key=lambda x: x.depart_time)
 
 
-    def min_time_route(self, time, start_stop, end_stop):
+    def min_time_route(self, time, start_stop, end_stop, transfer_time, cur_line):
         possible_ways = self.edges[(start_stop, end_stop)]
 
         best_time = float('inf')
@@ -78,9 +78,16 @@ class Graph:
         for possible_way in possible_ways:
             depart_time = possible_way.depart_time
             arrive_time = possible_way.arrive_time
-            if time <= depart_time and arrive_time - time < best_time:
-                best_way = possible_way
-                best_time = arrive_time - time
+
+            # Account for transfer
+            if cur_line is None or possible_way.line == cur_line:
+                if time <= depart_time and arrive_time - time < best_time:
+                    best_way = possible_way
+                    best_time = arrive_time - time
+            else:
+                if time + transfer_time <= depart_time and arrive_time - time + transfer_time < best_time:
+                    best_way = possible_way
+                    best_time = arrive_time - time + transfer_time
 
         return best_time, best_way
 
