@@ -70,7 +70,7 @@ class Graph:
             for row in self.edges.values():
                 row.sort(key=lambda x: x.depart_time)
 
-    def min_time_route(self, time, start_stop, end_stop, transfer_time, cur_line):
+    def min_cost_route(self, time, start_stop, end_stop, transfer_time, cur_line, time_criteria=True):
         possible_ways = self.edges[(start_stop, end_stop)]
 
         best_time = float('inf')
@@ -88,12 +88,9 @@ class Graph:
             else:
                 if time + transfer_time <= depart_time and arrive_time - time + transfer_time < best_time:
                     best_way = possible_way
-                    best_time = arrive_time - time + transfer_time
+                    best_time = arrive_time - time + transfer_time * (1 if time_criteria else 5)  # apply high cost for transfer
 
         return best_time, best_way
-
-    def min_transfer_route(self, time, start_stop, end_stop):
-        pass
 
     def heuristic(self, start_stop, end_stop):
         # Get coordinates of both stops, usually not adjacent
@@ -115,4 +112,4 @@ if __name__ == '__main__':
     start_stop = "PL. JANA PAWŁA II".lower()
     end_stop = "Rynek".lower()
 
-    print(graph.min_time_route(start_time, start_stop, end_stop))
+    print(graph.min_cost_route(start_time, start_stop, end_stop))

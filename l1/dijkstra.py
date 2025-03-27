@@ -45,7 +45,7 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
             except KeyError:
                 cur_line = None
 
-            best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time,
+            best_time, best_way = graph.min_cost_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time,
                                                        cur_line)
             new_time_to_stop = time_to_stop[cur_stop] + best_time
 

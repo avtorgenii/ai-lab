@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
         ]
 """
 
+
 def found_route_details(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -23,22 +24,52 @@ def found_route_details(func):
 
         end_time = time.time()
 
-        # Group routes by line and squash them
+        # Squash routes that are consecutive
         squashed_routes = []
-        grouped_routes = defaultdict(list)
 
-        # Group routes by line
-        for route in route_info:
-            grouped_routes[route['Line']].append(route)
+        if not route_info:
+            return route_info, cost_func_value
 
-        # Squash the routes for the same line
-        for line, routes in grouped_routes.items():
+        # Start with the first route
+        current_group = [route_info[0]]
+
+        for route in route_info[1:]:
+            # Get the last route in the current group
+            prev_route = current_group[-1]
+
+            # Check if routes are consecutive
+            # Conditions for consecutive routes:
+            # 1. Same line
+            # 2. End stop of previous route is start stop of current route
+            # 3. Departure time of current route is after or equal to arrival time of previous route
+            if (route['Line'] == prev_route['Line'] and
+                    route['Start stop'] == prev_route['End stop'] and
+                    route['Departure time'] >= prev_route['Arrival time']):
+                # Add to current group
+                current_group.append(route)
+            else:
+                # Different route - finalize current group and start a new one
+                # Create a merged route from the group
+                merged_route = {
+                    'Line': current_group[0]['Line'],
+                    'Departure time': current_group[0]['Departure time'],
+                    'Start stop': current_group[0]['Start stop'],
+                    'Arrival time': current_group[-1]['Arrival time'],
+                    'End stop': current_group[-1]['End stop']
+                }
+                squashed_routes.append(merged_route)
+
+                # Start a new group with the current route
+                current_group = [route]
+
+        # Add the last group
+        if current_group:
             merged_route = {
-                'Line': line,
-                'Departure time': routes[0]['Departure time'],
-                'Start stop': routes[0]['Start stop'],
-                'Arrival time': routes[-1]['Arrival time'],
-                'End stop': routes[-1]['End stop']
+                'Line': current_group[0]['Line'],
+                'Departure time': current_group[0]['Departure time'],
+                'Start stop': current_group[0]['Start stop'],
+                'Arrival time': current_group[-1]['Arrival time'],
+                'End stop': current_group[-1]['End stop']
             }
             squashed_routes.append(merged_route)
 
@@ -52,7 +83,10 @@ def found_route_details(func):
         calc_time = end_time - start_time
         logging.error(f"CALCULATION TIME: {calc_time:.2f} seconds")
 
+        return route_info, cost_func_value
+
     return wrapper
+
 
 class PriorityQueue:
     def __init__(self):

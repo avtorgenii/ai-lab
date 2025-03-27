@@ -15,7 +15,7 @@ from graph import *
 
 
 @found_route_details
-def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
+def astar(graph, start_stop, end_stop, start_time, transfer_time, time_criteria=True):
     print("A* TIME CRITERIA")
 
     unvisited = PriorityQueue()
@@ -42,8 +42,10 @@ def astar_time(graph, start_stop, end_stop, start_time, transfer_time):
             except KeyError:
                 cur_line = None
 
-            best_time, best_way = graph.min_time_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time,
-                                                       cur_line)
+            best_time, best_way = graph.min_cost_route(cur_time_on_stop[cur_stop], cur_stop, neighbor,
+                                                       transfer_time,
+                                                       cur_line, time_criteria)
+
             new_cost_to_stop = cost_to_stop[cur_stop] + best_time + graph.heuristic(neighbor, end_stop)
 
             if cost_to_stop[neighbor] > new_cost_to_stop:
@@ -85,15 +87,4 @@ if __name__ == '__main__':
     transfer_time = str_to_seconds("00:02:00")
 
     graph = Graph("connection_graph.csv")
-    astar_time(graph, start_stop, end_stop, start_time, transfer_time)
-
-
-# INFO:root:ROUTE INFO:
-# INFO:root:Line: 20, Departure time: 10:05:00, Start stop: pilczyce, Arrival time: 10:37:00, End stop: hallera
-# INFO:root:Line: 17, Departure time: 10:40:00, Start stop: hallera, Arrival time: 10:41:00, End stop: jastrzębia
-# INFO:root:Line: 2, Departure time: 10:45:00, Start stop: jastrzębia, Arrival time: 10:46:00, End stop: orla
-# INFO:root:Line: 7, Departure time: 10:50:00, Start stop: orla, Arrival time: 10:53:00, End stop: krzyki
-# INFO:root:Line: D, Departure time: 10:57:00, Start stop: krzyki, Arrival time: 11:17:00, End stop: klecina
-# INFO:root:Line: 107, Departure time: 11:03:00, Start stop: zimowa, Arrival time: 11:04:00, End stop: os. przyjaźni
-# ERROR:root:COST FUNC VALUE: 4440
-# ERROR:root:CALCULATION TIME: 0.33 seconds
+    astar(graph, start_stop, end_stop, start_time, transfer_time, time_criteria=False)
