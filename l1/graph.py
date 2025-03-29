@@ -43,11 +43,12 @@ class Edge:
 
 
 class Graph:
-    def __init__(self, file_path):
+    def __init__(self, file_path, transfer_cost_multiplier=5):
         self.nodes = defaultdict(set)  # key - start stop, value - list of possible end stops
         self.edges = defaultdict(
             list)  # key - pair of start and end stops, value - list of Edges (possible ways to travel from start stop to end stop)
         self.load_data(file_path)
+        self.transfer_cost_multiplier = transfer_cost_multiplier
 
     def load_data(self, file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
@@ -70,7 +71,7 @@ class Graph:
             for row in self.edges.values():
                 row.sort(key=lambda x: x.depart_time)
 
-    def min_cost_route(self, time, start_stop, end_stop, transfer_time, cur_line, time_criteria=True):
+    def min_cost_route(self, time, start_stop, end_stop, transfer_time, cur_line, time_criteria=True, tabu_table=None):
         possible_ways = self.edges[(start_stop, end_stop)]
 
         best_time = float('inf')
@@ -80,6 +81,11 @@ class Graph:
             depart_time = possible_way.depart_time
             arrive_time = possible_way.arrive_time
 
+            # Do not allow selected edge if is in tabu table
+            if tabu_table is not None and tabu_table.get((start_stop, end_stop), None) == possible_way:
+                continue
+
+
             # Account for transfer
             if cur_line is None or possible_way.line == cur_line:
                 if time <= depart_time and arrive_time - time < best_time:
@@ -88,7 +94,7 @@ class Graph:
             else:
                 if time + transfer_time <= depart_time and arrive_time - time < best_time:
                     best_way = possible_way
-                    best_time = arrive_time - time + transfer_time * (1 if time_criteria else 5)  # apply high cost for transfer
+                    best_time = arrive_time - time + transfer_time * (1 if time_criteria else self.transfer_cost_multiplier)  # apply high cost for transfer
 
         return best_time, best_way
 

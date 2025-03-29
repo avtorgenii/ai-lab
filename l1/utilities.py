@@ -1,7 +1,7 @@
 import heapq
 import logging
 import time
-from collections import defaultdict
+from collections import OrderedDict
 
 logging.basicConfig(level=logging.DEBUG)
 """
@@ -100,3 +100,14 @@ class PriorityQueue:
 
     def get(self):
         return heapq.heappop(self.elements)[1]
+
+
+class FIFODict(OrderedDict):
+    def __init__(self, max_size):
+        super().__init__()
+        self.max_size = max_size
+
+    def __setitem__(self, key, value):
+        if len(self) >= self.max_size:
+            self.popitem(last=False)  # Removes the oldest item (FIFO behavior)
+        super().__setitem__(key, value)

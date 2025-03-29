@@ -18,8 +18,8 @@ from graph import *
 
 
 @found_route_details
-def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
-    print("DIJKSTRA TIME CRITERIA")
+def dijkstra(graph, start_stop, end_stop, start_time, transfer_time, time_criteria=True):
+    print(f"DIJKSTRA {"TIME" if time_criteria else "TRANSFERS"} CRITERIA")
 
     unvisited = PriorityQueue()
     unvisited.put(start_stop, 0)
@@ -46,7 +46,7 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time):
                 cur_line = None
 
             best_time, best_way = graph.min_cost_route(cur_time_on_stop[cur_stop], cur_stop, neighbor, transfer_time,
-                                                       cur_line)
+                                                       cur_line, time_criteria)
             new_time_to_stop = time_to_stop[cur_stop] + best_time
 
             if time_to_stop[neighbor] > new_time_to_stop:

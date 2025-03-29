@@ -16,7 +16,7 @@ from graph import *
 
 @found_route_details
 def astar(graph, start_stop, end_stop, start_time, transfer_time, time_criteria=True):
-    print("A* TIME CRITERIA")
+    print(f"A* {"TIME" if time_criteria else "TRANSFERS"} CRITERIA")
 
     unvisited = PriorityQueue()
     unvisited.put(start_stop, 0)
