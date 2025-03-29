@@ -86,7 +86,7 @@ class Graph:
                     best_way = possible_way
                     best_time = arrive_time - time
             else:
-                if time + transfer_time <= depart_time and arrive_time - time + transfer_time < best_time:
+                if time + transfer_time <= depart_time and arrive_time - time < best_time:
                     best_way = possible_way
                     best_time = arrive_time - time + transfer_time * (1 if time_criteria else 5)  # apply high cost for transfer
 
