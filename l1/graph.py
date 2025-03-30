@@ -82,9 +82,13 @@ class Graph:
             arrive_time = possible_way.arrive_time
 
             # Do not allow selected edge if is in tabu table
-            if tabu_table is not None and tabu_table.get((start_stop, end_stop), None) == possible_way:
-                continue
-
+            if tabu_table is not None:
+                if tabu_table.get((start_stop, end_stop), None):
+                    way = tabu_table[(start_stop, end_stop)][0]
+                    tenure = tabu_table[(start_stop, end_stop)][1]
+                    if way == possible_way and tenure > 0:
+                        tabu_table[(start_stop, end_stop)] = (way, tenure-1)  # decrease tabu tenure after each attempt of breaking it
+                        continue
 
             # Account for transfer
             if cur_line is None or possible_way.line == cur_line:
@@ -94,7 +98,8 @@ class Graph:
             else:
                 if time + transfer_time <= depart_time and arrive_time - time < best_time:
                     best_way = possible_way
-                    best_time = arrive_time - time + transfer_time * (1 if time_criteria else self.transfer_cost_multiplier)  # apply high cost for transfer
+                    best_time = arrive_time - time + transfer_time * (
+                        1 if time_criteria else self.transfer_cost_multiplier)  # apply high cost for transfer
 
         return best_time, best_way
 

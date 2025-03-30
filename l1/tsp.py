@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from l1.graph import str_to_seconds, Graph, seconds_to_str
 from l1.utilities import PriorityQueue, found_route_details, FIFODict
-import random
 
 
 def dijkstra(graph, start_stop, end_stop, start_time, transfer_time, tabu_table, time_criteria=True):
@@ -104,13 +103,12 @@ def find_round_trip_path(graph, start_stop, intermediate_stops, start_time, tran
     return best_path, best_cost
 
 
-# @found_route_details
-def knox(graph, start_stop, intermediate_stops, start_time, transfer_time, time_criteria=True, total_steps_limit=20):
-    # Tabu table will be represented by FIFO dictionary: k - (start_stop, end_stop), v - line
-    tabu_table = FIFODict(len(intermediate_stops) * 20)
+@found_route_details
+def knox(graph, start_stop, intermediate_stops, start_time, transfer_time, time_criteria=True, total_steps_limit=10, tabu_tenure_init=5, tabu_table_size_multiplier=20):
+    # Tabu table will be represented by FIFO dictionary: k - (start_stop, end_stop), v - (line, tabu_tenure)
+    tabu_table = FIFODict(len(intermediate_stops) * tabu_table_size_multiplier)
 
-    # Pull out random solution using dijkstra and shuffling(?) of intermediate stops
-    # random.shuffle(intermediate_stops)
+    # Pull out solution using dijkstra
     best_path, best_cost = find_round_trip_path(graph, start_stop, intermediate_stops, start_time, transfer_time, None,
                                                 time_criteria)
     print(f"Best initial path: {best_path}")
@@ -118,9 +116,7 @@ def knox(graph, start_stop, intermediate_stops, start_time, transfer_time, time_
 
     # Fil out tabu table
     for part in best_path:
-        tabu_table[(part[0], part[1])] = part[2]
-
-    print(tabu_table)
+        tabu_table[(part[0], part[1])] = (part[2], tabu_tenure_init)
 
     # Search cycle
     total_steps_left = total_steps_limit
@@ -130,22 +126,28 @@ def knox(graph, start_stop, intermediate_stops, start_time, transfer_time, time_
         new_path, new_cost = find_round_trip_path(graph, start_stop, intermediate_stops, start_time, transfer_time,
                                                   tabu_table, time_criteria)
 
+        print(new_cost)
+
         # Fill out tabu table
         for part in new_path:
-            tabu_table[(part[0], part[1])] = part[2]
+            tabu_table[(part[0], part[1])] = (part[2], tabu_tenure_init)
 
         if new_cost < best_cost:
             best_path = new_path
             best_cost = new_cost
 
-        print(new_path)
-        print(new_cost)
-
+    route_info = []
     for part in best_path:
-        print(part)
-    print(f"Total cost: {best_cost}")
+        start_stop, end_stop, way = part
+        route_info.append({
+            "Line": way.line,
+            "Departure time": seconds_to_str(way.depart_time),
+            "Arrival time": seconds_to_str(way.arrive_time),
+            "Start stop": start_stop,
+            "End stop": end_stop,
+        })
 
-    return best_path, best_cost
+    return route_info, best_cost
 
 
 if __name__ == '__main__':

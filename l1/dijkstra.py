@@ -14,9 +14,6 @@ from graph import *
 """
 
 
-
-
-
 @found_route_details
 def dijkstra(graph, start_stop, end_stop, start_time, transfer_time, time_criteria=True):
     print(f"DIJKSTRA {"TIME" if time_criteria else "TRANSFERS"} CRITERIA")
@@ -82,7 +79,7 @@ def dijkstra(graph, start_stop, end_stop, start_time, transfer_time, time_criter
 
 if __name__ == '__main__':
     start_stop = "PILCZYCE".lower()
-    end_stop = "KLECINA".lower()
+    end_stop = "GALERIA DOMINIKAŃSKA".lower()
     start_time = str_to_seconds("10:03:00")
     print(f"Start time: {start_time}")
     transfer_time = str_to_seconds("00:02:00")
