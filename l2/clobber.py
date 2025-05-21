@@ -40,23 +40,31 @@ class Clobber:
         elif (row, col) in self.black_positions:
             if (row - 1, col) in self.white_positions:
                 moves.append((row - 1, col))
-            elif (row + 1, col) in self.white_positions:
+            if (row + 1, col) in self.white_positions:
                 moves.append((row + 1, col))
-            elif (row, col - 1) in self.white_positions:
+            if (row, col - 1) in self.white_positions:
                 moves.append((row, col - 1))
-            elif (row, col + 1) in self.white_positions:
+            if (row, col + 1) in self.white_positions:
                 moves.append((row, col + 1))
         elif (row, col) in self.white_positions:
             if (row - 1, col) in self.black_positions:
                 moves.append((row - 1, col))
-            elif (row + 1, col) in self.black_positions:
+            if (row + 1, col) in self.black_positions:
                 moves.append((row + 1, col))
-            elif (row, col - 1) in self.black_positions:
+            if (row, col - 1) in self.black_positions:
                 moves.append((row, col - 1))
-            elif (row, col + 1) in self.black_positions:
+            if (row, col + 1) in self.black_positions:
                 moves.append((row, col + 1))
 
         return moves
+
+    def is_players_tile(self, row, col, player):
+        if player == "W":
+            return (row, col) in self.white_positions
+        elif player == "B":
+            return (row, col) in self.black_positions
+        else:
+            return False
 
     def get_all_valid_moves(self, player):
         moves = []
@@ -67,6 +75,9 @@ class Clobber:
         for r, c in pieces:
             moves.extend([((r, c), target) for target in self.get_valid_moves_for_tile(r, c)])
         return moves
+
+    def is_over(self, current_player):
+        return len(self.get_all_valid_moves(current_player)) == 0
 
     def make_move(self, start_row, start_col, end_row, end_col):
         if (end_row, end_col) in self.get_valid_moves_for_tile(start_row, start_col):
@@ -80,22 +91,20 @@ class Clobber:
                 self.white_positions.append((end_row, end_col))
 
     def evaluate(self, heuristic_id):
-        """
-        :param heuristic_id: Can be 1, 2 or 3, check Clobber class for details on them
-        :return: Evaluation of current game state, if the number is closer to -inf than to +inf - blacks are in favor, otherwise whites
-        """
+        """Positive values favor White, negative favor Black."""
         heuristics = {
             1: self.heuristic_1,
             2: self.heuristic_2,
             3: self.heuristic_3,
+            4: self.heuristic_4,
+            5: self.heuristic_5,
         }
 
         return heuristics[heuristic_id]()
 
     def heuristic_1(self):
         """
-        Material difference.  Counts the difference
-        between the number of white and black pieces.
+        Counts the difference between the number of black and white pieces.
         """
         return len(self.black_positions) - len(self.white_positions)
 
@@ -103,17 +112,7 @@ class Clobber:
         """
         Mobility. Counts the difference in the number of possible moves between black and white.
         """
-        black_moves = 0
-        white_moves = 0
-        for r, c in self.black_positions:
-            moves = self.get_valid_moves_for_tile(r, c)
-            if moves:
-                black_moves += len(moves)
-        for r, c in self.white_positions:
-            moves = self.get_valid_moves_for_tile(r, c)
-            if moves:
-                white_moves += len(moves)
-        return black_moves - white_moves
+        return len(self.get_all_valid_moves("B")) - len(self.get_all_valid_moves("W"))
 
     def heuristic_3(self):
         """
@@ -124,6 +123,53 @@ class Clobber:
         material_diff = self.heuristic_1()
         mobility_diff = self.heuristic_2()
         return (material_weight * material_diff) + (mobility_weight * mobility_diff)
+
+    def heuristic_4(self):
+        """
+        Adaptive Heuristic 1: Focus on material in the late game, mobility in the early game.
+        """
+        current_pieces = len(self.black_positions) + len(self.white_positions)
+        game_progress = 1 - (current_pieces / (self.rows * self.cols)) # 0 at start, approaches 1 at end
+
+        material_diff = self.heuristic_1()
+        mobility_diff = self.heuristic_2()
+
+        # Adjust weights based on game progress
+        # Early game (low game_progress): focus more on mobility
+        # Late game (high game_progress): focus more on material
+        material_weight = 1 + (game_progress * 3) # Increases from 1 to 4
+        mobility_weight = 2 - (game_progress * 1.5) # Decreases from 2 to 0.5 (or less)
+
+        return (material_weight * material_diff) + (mobility_weight * mobility_diff)
+
+    def heuristic_5(self):
+        """
+        Adaptive Heuristic 2: Emphasizes blocking/trapping opponents.
+        Combines material and mobility, but adds a component for "blocked opponent moves".
+        """
+        material_diff = self.heuristic_1()
+        mobility_diff = self.heuristic_2()
+
+        # Calculate how many of the opponent's pieces are stuck
+        white_stuck_pieces = sum(1 for r, c in self.white_positions if not self.get_valid_moves_for_tile(r, c))
+        black_stuck_pieces = sum(1 for r, c in self.black_positions if not self.get_valid_moves_for_tile(r, c))
+
+        # A positive value means more black pieces are stuck, which is good for White
+        stuck_pieces_diff = black_stuck_pieces - white_stuck_pieces
+
+        # Adapt weights based on total pieces left (game state)
+        current_pieces = len(self.black_positions) + len(self.white_positions)
+        # Ratio of pieces remaining (1.0 at start, approaches 0 at end)
+        pieces_remaining_ratio = current_pieces / (self.rows * self.cols)
+
+        # Early game (pieces_remaining_ratio high): balance material, mobility, and some trapping
+        # Late game (pieces_remaining_ratio low): trapping becomes more critical, potentially decisive
+        material_weight = 2.0
+        mobility_weight = 1.0
+        # Increase trapping weight as pieces decrease
+        trapping_weight = 1.0 + (1 - pieces_remaining_ratio) * 2
+
+        return (material_weight * material_diff) + (mobility_weight * mobility_diff) + (trapping_weight * stuck_pieces_diff)
 
 
 if __name__ == "__main__":
